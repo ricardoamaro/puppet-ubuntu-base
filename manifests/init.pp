@@ -15,7 +15,7 @@ class ubuntu-base {
 	#######################################################################
 	#######################################################################
 
-	#include apt
+	include apt
 	include ssh::client
 	#include munin::client
 	#include ubuntu-base::syslog
