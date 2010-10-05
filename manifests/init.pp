@@ -15,11 +15,6 @@ class ubuntu-base {
 	#######################################################################
 	#######################################################################
 
-	include apt
-	include ssh
-	#include munin::client
-	#include ubuntu-base::syslog
-
 	package {
 		[
 			apticron,
