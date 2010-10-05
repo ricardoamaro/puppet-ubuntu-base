@@ -1,0 +1,96 @@
+class dbp::syslog {
+
+	# - syslog should put everything into /var/log/allmessages for convenience
+	# - additionally, hosts should put the logfile to the tenth console, so
+	#   the last messages can be seen on the screen
+	# - finally, if a syslog server is configured, everyone (except the
+	#   server itself) should log there.
+
+	# decide about the console
+	$syslog_tty_stmt = $vserver ? {
+		# vserver guests don't have access to the console
+		'guest' => "",
+		# everyone else should have
+		# TODO: check xen paravirt
+		default => "*.* /dev/tty10\n",
+	}
+
+	# decide about the server
+	$syslog_server_stmt = $syslog_server ? {
+		# No syslog_server specified, don't log to network
+		'' => "",
+		# this host is the syslog_server, don't log to network
+		$fqdn => "",
+		# everyone else uses the syslog_server
+		default => "*.* @${syslog_server}\n",
+	}
+
+	# the default logfile without syncing
+	$syslog_default_log = "*.* -/var/log/allmessages\n"
+
+	# combine everything
+	$syslog_rules = "${syslog_tty_stmt}${syslog_default_log}${syslog_server_stmt}"
+
+	case $lsbdistid {
+		Debian: {
+			case $lsbdistcodename {
+				etch: {
+					package {
+						[ "sysklogd" ]:
+							ensure => installed;
+					}
+					# apply the built config
+					config_file { "/etc/syslog.conf": content => $syslog_rules; }
+
+					# enable remote reception on the syslogd_server
+					$syslogd_options = $syslog_server ? {
+						$fqdn => '-r',
+						default => '',
+					}
+					debug ( "Setting remote syslog options on $fqdn: ${syslogd_options}" )
+					config_file { "/etc/default/syslogd": content => "SYSLOGD=\"${syslogd_options}\"\n"; }
+
+					service { sysklogd:
+						ensure => running,
+						pattern => syslogd,
+						subscribe => [ File["/etc/syslog.conf"], File["/etc/default/syslogd"] ];
+					}
+
+				}
+				lenny: {
+					package {
+						[ "rsyslog" ]:
+							ensure => installed;
+						[ "sysklogd", "klogd" ]:
+							ensure => purged;
+					}
+
+					$include_config = '$IncludeConfig /etc/rsyslog.d/*.conf'
+					# apply the built config
+					config_file {
+						"/etc/rsyslog.conf":
+							content => template("dbp/rsyslog.conf.erb");
+						"/etc/rsyslog.d/puppet.conf":
+							content => $syslog_rules;
+					}
+
+					file {
+						"/etc/rsyslog.d":
+							ensure => directory,
+							mode => 0755, owner => root, group => 0;
+					}
+
+					service { rsyslog:
+						ensure => running,
+						hasstatus => true,
+						subscribe => [ File["/etc/rsyslog.conf"], File["/etc/rsyslog.d"] ];
+					}
+
+				}
+			}
+		}
+	}
+}
+
+
+
