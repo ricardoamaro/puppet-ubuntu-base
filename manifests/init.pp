@@ -1,3 +1,11 @@
+# ubuntu-base puppet module
+# Based upon:
+# dbp.pp - EDV-Beratung&Service Debian Best Practices
+# Copyright (C) 2007 David Schmitt <david@schmitt.edv-bus.at>
+# See LICENSE for the full license granted to you.
+#
+# Adapted by Alexander Werner <bundeswerner@googlemail.com>
+
 class ubuntu-base {
 
 	case $operatingsystem {
