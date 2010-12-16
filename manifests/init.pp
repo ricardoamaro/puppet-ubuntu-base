@@ -97,7 +97,8 @@ class ubuntu-base {
      "iftop",
      "joe",
      "sysstat",
-     "apparmor-profiles"
+     "apparmor-profiles",
+     "ethtool"
      ]:
        ensure => installed;
      
