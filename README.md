@@ -1,4 +1,4 @@
-Puppet Module: ubuntu-base
+Puppet Module: ubuntu-basic-server
 ==========================
 
 Description
